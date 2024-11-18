@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.21.1",
+    "moment-timezone": "^0.5.46",
     "mongoose": "^8.8.1"
   }
 }

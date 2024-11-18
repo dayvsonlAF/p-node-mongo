@@ -18,8 +18,10 @@ const funcionarioSchema = new Schema({
     type: String,
     required: true
   },
-  roles: {
-    type: Array
+  perfil_id: {
+    type: Schema.Types.ObjectId, // Relacionamento com a coleção perfil
+    ref: 'Perfil', // Nome do modelo relacionado
+    required: true
   }
 })
 
