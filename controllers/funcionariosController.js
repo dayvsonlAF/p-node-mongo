@@ -18,6 +18,31 @@ class FuncionarioController {
     }
   }
 
+  async get_filtered_funcionarios(req, res){
+    const filter = req.params.filter.trim();
+    try {
+      const funcionarios = await Funcionario.aggregate([
+        {
+          $match: {
+            $or: [
+              {
+                full_name: { $regex: filter, $options: 'i' }  // Buscando 'filter' em qualquer parte do full_name
+              },
+              {
+                address: { $regex: filter, $options: 'i' }  // Buscando 'filter' em qualquer parte do address
+              }
+            ]
+          }
+        }
+      ]);
+
+      return res.status(200).json(funcionarios);
+
+    } catch (err) {
+      return res.status(500).json({ message: "Nenhum funcionário encontrado", error: err });
+    }
+  }
+
   async post_add_funcionarios(req, res) {
 
     // Valida os dados de entrada usando o validador
