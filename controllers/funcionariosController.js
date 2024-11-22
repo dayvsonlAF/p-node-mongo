@@ -1,119 +1,36 @@
-const moment = require('moment-timezone');
-const Funcionario = require('../models/funcionarios');
-const Perfil = require('../models/perfil');
-const FuncionarioValidation = require('../validation/FuncionarioValidation');
-const FuncionariosRepository = require("../repositories/funcionariosRepository")
+const FuncionarioService = require("../services/funcionarioService")
+// const mongoosePaginate = require('mongoose-paginate-v2');
 
 class FuncionarioController {
 
-  async get_all_funcionarios(req, res) {
+  async get_all_funcionarios(req, res){
     try {
-      const funcionarios = Funcionario.find()
-        .populate('perfil_id', 'description')
-        .then((funcionarios) => {
-          return res.status(200).json(funcionarios);
-        })
+      const funcionarios = await FuncionarioService.getAllFuncionarios();
+      return res.status(200).json(funcionarios);
     } catch (err) {
       return res.status(500).json({ message: "Erro ao recuperar dados", error: err });
     }
   }
 
-  async get_filtered_funcionarios(req, res){
-    const filter = req.params.filter.trim();
-    try {
-      const funcionarios = await Funcionario.aggregate([
-        {
-          $match: {
-            $or: [
-              {
-                full_name: { $regex: filter, $options: 'i' }  // Buscando 'filter' em qualquer parte do full_name
-              },
-              {
-                address: { $regex: filter, $options: 'i' }  // Buscando 'filter' em qualquer parte do address
-              }
-            ]
-          }
-        }
-      ]);
-
+  async get_filtered_funcionarios(req, res) {
+    try{
+      const { filter, page } = req.params;
+      const funcionarios = await FuncionarioService.getFilteredFuncionarios(filter, page);
       return res.status(200).json(funcionarios);
-
     } catch (err) {
       return res.status(500).json({ message: "Nenhum funcionário encontrado", error: err });
     }
   }
 
   async post_add_funcionarios(req, res) {
-
-    // Valida os dados de entrada usando o validador
-    const validationErrors = FuncionarioValidation.validate(req.body,);
-
-    // Se houver erros de validação, retorna uma resposta de erro
-    if (validationErrors) {
-      return res.status(400).json({ message: "Erro de validação", errors: validationErrors });
-    }
-
     try {
-      // Detecta o fuso horário local automaticamente
-      // const localTimezone = moment.tz.guess();
-      // console.log('localtimezone', localTimezone)
-
-      // Converte a data de nascimento para UTC, ajustando o fuso horário local
-      const birthDateLocal = moment.tz(req.body.date_of_birth, "Etc/GMT+3");
-      console.log("Data em Brasília (local):", birthDateLocal.format()); // Exibe a data em Brasília
-
-      // Converte a data para UTC, pois o MongoDB armazena como UTC
-      const birthDateUTC = birthDateLocal.utc().toDate(); // Converte para UTC e transforma em objeto Date
-      console.log("Data em UTC:", birthDateUTC.toISOString()); // Exibe a data em UTC (no formato ISO 8601)
-
-      // Data atual em Brasilia
-      const currentDateBrasilia = moment.tz('America/Sao_Paulo'); // Hora atual em Brasília
-
-      // Calculando a idade
-      const age = currentDateBrasilia.diff(birthDateLocal, 'years'); // Diferença em anos
-
-      // Verificar se o aniversário já passou este ano
-      const isBirthdayPassed = currentDateBrasilia.isSameOrAfter(birthDateLocal, 'day');
-
-      // Verificar se o aniversário já passou este ano
-      const calculatedAge = isBirthdayPassed ? age : age - 1;
-      console.log("Idade calculada:", calculatedAge);
-
-      let perfilId;
-
-      perfilId = await FuncionariosRepository.findPerfilByAge(calculatedAge)
-
-      // Se o perfil não for encontrado, retorna erro
-      if (!perfilId) {
-        return res.status(400).json({ message: `Perfil para ${calculatedAge >= 18 ? 'maiores' : 'menores'} de 18 não encontrado` });
-      }
-
-      // console.log(req.body)
-      // Sempre limitar, para evitar inserção indevidas de dados.
-      const add_funcionario = new Funcionario({
-        full_name: req.body.full_name,
-        date_of_birth: birthDateUTC,
-        address: req.body.address,
-        email: req.body.email,
-        perfil_id: perfilId,
-      })
-
-      // const add_funcionario = new Funcionario(req.body)
-
-      await add_funcionario.save()
-        .then(funcionario => {
-          res.status(200).json({ message: "Funcionário criado com sucesso", funcionario })
-        })
-        .catch(err => {
-          res.status(500).json({ message: "Erro ao criar funcionário", error: err })
-        })
-
+      const funcionario = await FuncionarioService.addFuncionario(req.body);
+      return res.status(200).json({ message: "Funcionário criado com sucesso", funcionario })
     } catch (err) {
       res.status(500).json({
         message: "Erro ao criar funcionário",
         error: err
       });
-      console.log(err)
     }
 
   }

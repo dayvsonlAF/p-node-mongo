@@ -12,7 +12,8 @@ const funcionarioSchema = new Schema({
   },
   address: {
     type: String,
-    required: true
+    required: true,
+    // index: true
   },
   email: {
     type: String,
@@ -24,6 +25,9 @@ const funcionarioSchema = new Schema({
     required: true
   }
 })
+
+// Adiconando esse index, para poder usar o search depois.
+funcionarioSchema.index({ full_name: 'text', address: 'text' });
 
 const Funcionario = mongoose.model('Funcionario', funcionarioSchema);
 module.exports = Funcionario;
