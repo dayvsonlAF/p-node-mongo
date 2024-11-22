@@ -1,30 +1,31 @@
-const FuncionarioService = require("../services/funcionarioService")
-// const mongoosePaginate = require('mongoose-paginate-v2');
+import { funcionarioService } from "../services/funcionarioService";
+import { Request, Response } from 'express';
+
 
 class FuncionarioController {
 
-  async get_all_funcionarios(req, res){
+  async get_all_funcionarios(req: Request, res: Response){
     try {
-      const funcionarios = await FuncionarioService.getAllFuncionarios();
+      const funcionarios = await funcionarioService.getAllFuncionarios();
       return res.status(200).json(funcionarios);
     } catch (err) {
       return res.status(500).json({ message: "Erro ao recuperar dados", error: err });
     }
   }
 
-  async get_filtered_funcionarios(req, res) {
+  async get_filtered_funcionarios(req: Request, res: Response) {
     try{
       const { filter, page } = req.params;
-      const funcionarios = await FuncionarioService.getFilteredFuncionarios(filter, page);
+      const funcionarios = await funcionarioService.getFilteredFuncionarios(filter, page);
       return res.status(200).json(funcionarios);
     } catch (err) {
       return res.status(500).json({ message: "Nenhum funcionário encontrado", error: err });
     }
   }
 
-  async post_add_funcionarios(req, res) {
+  async post_add_funcionarios(req: Request, res: Response) {
     try {
-      const funcionario = await FuncionarioService.addFuncionario(req.body);
+      const funcionario = await funcionarioService.addFuncionario(req.body);
       return res.status(200).json({ message: "Funcionário criado com sucesso", funcionario })
     } catch (err) {
       res.status(500).json({
@@ -35,4 +36,6 @@ class FuncionarioController {
 
   }
 }
-module.exports = new FuncionarioController();
+
+const funcionariosController = new FuncionarioController();
+export { funcionariosController }

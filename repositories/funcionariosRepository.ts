@@ -1,9 +1,9 @@
-const Funcionario = require("../models/funcionarios");
-const Perfil = require("../models/perfil");
-const moment = require('moment-timezone');
+import { Funcionario, IFuncionario } from "../models/funcionarios";
+import { Perfil } from "../models/perfil";
+import moment from 'moment-timezone';
 
 class FuncionariosRepository{
-  async calculatedAge(birth){
+  calculatedAge(birth: Date): {calculatedAge: number, birthDateUTC:Date}{
     try {
       // Detecta o fuso horário local automaticamente
       // const localTimezone = moment.tz.guess();
@@ -30,8 +30,8 @@ class FuncionariosRepository{
       const calculatedAge = isBirthdayPassed ? age : age - 1;
 
       return {calculatedAge, birthDateUTC};
-    } catch (err) {
-      return 'Erro ao calcular a Idade'
+    } catch {
+      throw new Error ('Erro ao calcular a Idade')
     }
   }
 
@@ -40,12 +40,12 @@ class FuncionariosRepository{
       const funcionarios = Funcionario.find()
         .populate('perfil_id', 'description')
           return funcionarios;
-    } catch (err) {
+    } catch {
       throw new Error('Erro ao buscar funcionarios');
     }
   }
 
-  async findPerfilByAge(calculatedAge){
+  async findPerfilByAge(calculatedAge: number): Promise<{_id: string | null}>{
     try {
       const match = { age: { [calculatedAge >= 18 ? '$gte' : '$lt']: 18 } }
 
@@ -56,12 +56,12 @@ class FuncionariosRepository{
 
        // Se um perfil for encontrado, retorna o id
        return perfil.length > 0 ? perfil[0]._id : null; // Retorna o _id ou null se não encontrar
-    } catch (err) {
+    } catch {
       throw new Error('Erro ao buscar perfil por idade');
     }
   }
 
-  async findFuncionariosBySearch(filter, page) {
+  async findFuncionariosBySearch(filter: string, page: string): Promise<{data: object, currentPage: number, limit: number}> {
     try {
       
       const currentPage = parseInt(page);
@@ -100,12 +100,12 @@ class FuncionariosRepository{
 
       return {data, currentPage, limit};
 
-    } catch (err) {
+    } catch (err: any) {
       throw new Error("Erro ao buscar funcionários: " + err.message);
     }
   }
 
-  async calculatTotalOfFuncionariosBySearch (filter){
+  async calculatTotalOfFuncionariosBySearch (filter: string): Promise<{total: number}> {
     try {
       const total = await Funcionario.countDocuments({
         $or: [
@@ -114,21 +114,22 @@ class FuncionariosRepository{
         ]
       });
 
-      return total;
-    } catch (err) {
-      return res.status(500).json({ message: "Não foi possível calcular a quantidade de funcionários com essa busca", error: err });
+      return { total };
+    } catch {
+      throw new Error("Não foi possível calcular a quantidade de funcionários com essa busca");
     }
   }
 
-  async createFuncionario(funcionarioData){
-    try {
-      const newFuncionario = new Funcionario(funcionarioData)
-      return await newFuncionario.save();
-    } catch (err) {
-      throw new Error('Erro ao salvar funcionário');
-    }
+  async createFuncionario(funcionarioData: IFuncionario) {
+  try {
+    const newFuncionario = new Funcionario(funcionarioData);
+    return await newFuncionario.save();
+  } catch (error) {
+    throw new Error('Erro ao salvar funcionário');
   }
+}
 
 }
 
-module.exports = new FuncionariosRepository();
+const funcionariosRepository = new FuncionariosRepository();
+export { funcionariosRepository }

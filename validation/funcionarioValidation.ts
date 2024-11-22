@@ -46,4 +46,5 @@ class FuncionarioValidation {
   }
 }
 
-module.exports = new FuncionarioValidation();
+const funcionarioValidation = new FuncionarioValidation();
+export { funcionarioValidation }

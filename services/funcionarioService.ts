@@ -1,17 +1,19 @@
-const funcionariosRepository = require("../repositories/funcionariosRepository");
-const FuncionarioValidation = require("../validation/funcionarioValidation");
+import { funcionariosRepository } from "../repositories/funcionariosRepository";
+import { funcionarioValidation } from "../validation/funcionarioValidation";
+import { IFuncionario } from "../models/funcionarios";
+import { Types } from 'mongoose';
 
 class FuncionarioService{
 
   async getAllFuncionarios() {
     try {
       return await funcionariosRepository.getAllFuncionarios();
-    } catch (err) {
+    } catch {
       throw new Error('Erro ao recuperar dados de funcionários');
     }
   }
 
-  async getFilteredFuncionarios (filter, page){
+  async getFilteredFuncionarios (filter: string, page: string){
     const funcionarios = await funcionariosRepository.findFuncionariosBySearch(filter, page);
     try {
       const totalFuncionarios = await funcionariosRepository.calculatTotalOfFuncionariosBySearch(filter);
@@ -21,20 +23,19 @@ class FuncionarioService{
         totalFuncionarios,
         page: funcionarios.currentPage,
         limit: funcionarios.limit,
-        totalPages: Math.ceil(totalFuncionarios / funcionarios.limit),
+        totalPages: Math.ceil(totalFuncionarios.total / funcionarios.limit),
         data: funcionarios.data
       };
 
-    } catch (err) {
-      console.error(err.message); // Certifique-se de capturar e registrar o erro aqui
+    } catch {
       throw new Error('Erro ao buscar funcionários filtrados');
     }
   }
 
-  async addFuncionario(data){
+  async addFuncionario(data: IFuncionario){
 
     // Valida os dados de entrada usando o validador
-    const validationErrors = FuncionarioValidation.validate(data);
+    const validationErrors = funcionarioValidation.validate(data);
 
     // Se houver erros de validação, retorna uma resposta de erro
     if (validationErrors) {
@@ -42,7 +43,7 @@ class FuncionarioService{
     }
 
     try {
-      const {calculatedAge, birthDateUTC} = await funcionariosRepository.calculatedAge(data.date_of_birth);
+      const {calculatedAge, birthDateUTC} = funcionariosRepository.calculatedAge(data.date_of_birth);
 
       const perfilId = await funcionariosRepository.findPerfilByAge(calculatedAge);
 
@@ -51,6 +52,10 @@ class FuncionarioService{
         return { message: `Perfil para ${calculatedAge >= 18 ? 'maiores' : 'menores'} de 18 não encontrado` }
       }
 
+      if (!perfilId || !perfilId._id) {
+        throw new Error('Perfil inválido ou não encontrado.');
+      }      
+
       // console.log(req.body)
       // Sempre limitar, para evitar inserção indevidas de dados.
       const funcionario = {
@@ -58,7 +63,7 @@ class FuncionarioService{
         date_of_birth: birthDateUTC,
         address: data.address,
         email: data.email,
-        perfil_id: perfilId,
+        perfil_id: new Types.ObjectId(perfilId._id),
       }
 
       console.log(funcionario)
@@ -72,4 +77,5 @@ class FuncionarioService{
 
 }
 
-module.exports = new FuncionarioService();
+const funcionarioService =  new FuncionarioService();
+export { funcionarioService }
