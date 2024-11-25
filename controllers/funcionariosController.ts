@@ -35,6 +35,7 @@ class FuncionarioController {
   async post_add_funcionarios(req: Request, res: Response): Promise<Response> {
     try {
       const funcionario = await FuncionarioService.addFuncionario(req.body);
+      await redis.del("getAllFuncionarios");
       return res.status(200).json({ message: "Funcionário criado com sucesso", funcionario })
     } catch (err) {
       return res.status(500).json({
