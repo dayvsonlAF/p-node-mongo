@@ -1,15 +1,22 @@
-import { IGetAllFuncionarios } from "../interfaces/IGetAllFuncionarios";
 import FuncionarioService from "../services/funcionarioService";
-import { NextFunction, Request, Response } from 'express';
-
+import { Request, Response } from 'express';
+import { redis } from "../server";
 
 class FuncionarioController {
 
-  // Trás todos os funcionários
-  public async getAllFuncionario(req: Request, res: Response, next: NextFunction): Promise<Response>{
+  public async getAllFuncionario(req: Request, res: Response): Promise<Response>{
     try {
-      const funcionarios = await FuncionarioService.getAllFuncionarios();
-      return res.status(200).json(funcionarios);
+      // Buscando no cache
+      const getAllFuncionariosFromCache = await redis.get("getAllFuncionarios")
+      if(getAllFuncionariosFromCache){
+        const funcionarios = JSON.parse(getAllFuncionariosFromCache);
+        return res.status(200).json(funcionarios);
+      } else {
+        // Buscando no banco e adicionando ao cache
+        const funcionarios = await FuncionarioService.getAllFuncionarios();
+        await redis.set('getAllFuncionarios', JSON.stringify(funcionarios));
+        return res.status(200).json(funcionarios);
+      }
     } catch (err) {
       return res.status(500).json({ message: "Erro ao recuperar dados", error: err });
     }
