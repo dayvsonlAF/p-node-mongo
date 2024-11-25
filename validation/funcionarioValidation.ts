@@ -1,5 +1,5 @@
-const Joi = require('joi');
-Joi.objectId = require('joi-objectid')(Joi)
+import Joi from 'joi';
+import { IFuncionario } from '../interfaces/IFuncionario';
 /*
 
 O this.schema é uma propriedade da classe que armazena o esquema de validação definido com a biblioteca Joi. Ele contém as regras para validar os dados recebidos no método validate.
@@ -13,6 +13,9 @@ Essas regras são usadas pelo método validate para validar os dados recebidos.
 */
 
 class FuncionarioValidation {
+  
+  schema: Joi.ObjectSchema;
+  
   constructor(){
     this.schema = Joi.object({
       full_name: Joi.string().min(3).max(100).required().messages({
@@ -37,14 +40,14 @@ class FuncionarioValidation {
     })
   }
 
-  validate(data){
+  // O Joi.validate retorna um objeto com a propriedade error
+  validate(data: IFuncionario): { error: string[] | null }{
     const { error } = this.schema.validate(data, { abortEarly: false });
     if (error) {
-      return error.details.map((err) => err.message);
+      return {error: error.details.map((err) => err.message)};
     }
-    return null;
+    return {error: null};
   }
 }
 
-const funcionarioValidation = new FuncionarioValidation();
-export { funcionarioValidation }
+export default new FuncionarioValidation();

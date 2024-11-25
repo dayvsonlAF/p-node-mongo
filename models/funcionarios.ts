@@ -1,14 +1,5 @@
-import mongoose from 'mongoose';
-import { Schema, model, Types } from 'mongoose';
-
-// Interface para os dados do funcionário
-export interface IFuncionario {
-  full_name: string;
-  date_of_birth: Date;
-  address: string;
-  email: string;
-  perfil_id: Types.ObjectId;
-}
+import { Schema, model } from 'mongoose';
+import { IFuncionario } from '../interfaces/IFuncionario';
 
 const funcionarioSchema = new Schema({
   full_name: {
@@ -36,6 +27,6 @@ const funcionarioSchema = new Schema({
 })
 
 // Adiconando esse index, para poder usar o search depois.
-funcionarioSchema.index({ full_name: 'text', address: 'text' });
+// funcionarioSchema.index({ full_name: 'text', address: 'text' });
 
 export const Funcionario = model<IFuncionario>('Funcionario', funcionarioSchema);

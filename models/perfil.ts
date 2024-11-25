@@ -1,6 +1,5 @@
-import mongoose from 'mongoose';
-
-const Schema = mongoose.Schema;
+import { Schema, model } from 'mongoose';
+import { IPerfil } from '../interfaces/IPerfil';
 
 const perfilSchema = new Schema({
   description: {
@@ -13,5 +12,4 @@ const perfilSchema = new Schema({
   }
 })
 
-const Perfil = mongoose.model('Perfil', perfilSchema, 'perfil');
-export { Perfil }
+export const Perfil = model<IPerfil>('Perfil', perfilSchema, 'perfil');

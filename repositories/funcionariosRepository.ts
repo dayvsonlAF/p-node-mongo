@@ -1,9 +1,13 @@
-import { Funcionario, IFuncionario } from "../models/funcionarios";
+import { Funcionario } from "../models/funcionarios";
+import { IFuncionario } from "../interfaces/IFuncionario";
+import { IGetAllFuncionarios, IGetPerfil } from "../interfaces/IGetAllFuncionarios";
 import { Perfil } from "../models/perfil";
 import moment from 'moment-timezone';
 
 class FuncionariosRepository{
-  calculatedAge(birth: Date): {calculatedAge: number, birthDateUTC:Date}{
+
+  // Calcular idade
+  calculatedAge(birth: Date): {calculatedAge: number, birthDateUTC: Date}{
     try {
       // Detecta o fuso horário local automaticamente
       // const localTimezone = moment.tz.guess();
@@ -35,16 +39,31 @@ class FuncionariosRepository{
     }
   }
 
-  async getAllFuncionarios(){
+  // Trazer todos os funcionários
+  async getAllFuncionarios():Promise<IGetAllFuncionarios>{
     try {
-      const funcionarios = Funcionario.find()
-        .populate('perfil_id', 'description')
-          return funcionarios;
+      const funcionarios = await Funcionario.find()
+        //  Informando ao TypeScript que o retorno de find().populate() incluirá o campo expandido (description).
+        // Populate -> permite fazer referência a documentos em outras coleções.
+        .populate<{ perfil_id: IGetPerfil }>('perfil_id', 'description')
+        // Habilitar a opção lean diz ao Mongoose para pular a instanciação de um documento completo do Mongoose 
+        .lean()
+        
+      return funcionarios.map(funcionario => ({
+          ...funcionario,
+          _id: funcionario._id.toString(),
+          perfil_id: {
+            _id: funcionario.perfil_id._id.toString(),
+            description: funcionario.perfil_id.description,
+          }
+        }))
+        
     } catch {
       throw new Error('Erro ao buscar funcionarios');
     }
   }
 
+  // Definir se o funcionário é maior ou menor de idade
   async findPerfilByAge(calculatedAge: number): Promise<{_id: string | null}>{
     try {
       const match = { age: { [calculatedAge >= 18 ? '$gte' : '$lt']: 18 } }
@@ -61,11 +80,12 @@ class FuncionariosRepository{
     }
   }
 
-  async findFuncionariosBySearch(filter: string, page: string): Promise<{data: object, currentPage: number, limit: number}> {
+  // Buscar funcionários com base no filtro
+  async findFuncionariosBySearch(filter: string, page: string): Promise<{data: IGetAllFuncionarios, currentPage: number, limit: number}> {
     try {
       
       const currentPage = parseInt(page);
-      const limit = 2;
+      const limit:number = 2;
 
       const skip = (currentPage - 1) * limit
 
@@ -73,7 +93,7 @@ class FuncionariosRepository{
         throw new Error("Número de página inválido.");
       }
 
-      const data = await Funcionario.aggregate([
+      const data:IGetAllFuncionarios = await Funcionario.aggregate([
         {
           $match: {
             $or: [
@@ -105,6 +125,7 @@ class FuncionariosRepository{
     }
   }
 
+  // Calcular o total de funcionários com base na pesquisa com filtro
   async calculatTotalOfFuncionariosBySearch (filter: string): Promise<{total: number}> {
     try {
       const total = await Funcionario.countDocuments({
@@ -120,10 +141,11 @@ class FuncionariosRepository{
     }
   }
 
-  async createFuncionario(funcionarioData: IFuncionario) {
+  async createFuncionario(funcionarioData: IFuncionario): Promise<void> {
+    
   try {
     const newFuncionario = new Funcionario(funcionarioData);
-    return await newFuncionario.save();
+    await newFuncionario.save();
   } catch (error) {
     throw new Error('Erro ao salvar funcionário');
   }
@@ -131,5 +153,4 @@ class FuncionariosRepository{
 
 }
 
-const funcionariosRepository = new FuncionariosRepository();
-export { funcionariosRepository }
+export default new FuncionariosRepository();
